@@ -45,9 +45,14 @@
 #include "utils/exception.h"
 #include "utils/inttypes.h"
 #include "utils/utilities.h"
+#include "custom/ntttransform.h"
 
 #include <map>
 #include <vector>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <stdexcept>
 
 namespace intnat {
 
@@ -197,7 +202,8 @@ void NumberTheoreticTransformNat<VecType>::InverseTransformIterative(const VecTy
 
 template <typename VecType>
 void NumberTheoreticTransformNat<VecType>::ForwardTransformToBitReverseInPlace(const VecType& rootOfUnityTable,
-                                                                               VecType* element) {
+                                                                               VecType* element) {   
+    std::cout << "NumberTheoreticTransformDyn<VecType>::ForwardTransformToBitReverseInPlace" << std::endl;
     usint n         = element->GetLength();
     IntType modulus = element->GetModulus();
     IntType mu      = modulus.ComputeMu();
@@ -243,6 +249,7 @@ template <typename VecType>
 void NumberTheoreticTransformNat<VecType>::ForwardTransformToBitReverse(const VecType& element,
                                                                         const VecType& rootOfUnityTable,
                                                                         VecType* result) {
+    std::cout << "NumberTheoreticTransformDyn<VecType>::ForwardTransformToBitReverse" << std::endl;
     usint n = element.GetLength();
     if (result->GetLength() != n) {
         OPENFHE_THROW("size of input element and size of output element not of same size");
@@ -298,6 +305,30 @@ void NumberTheoreticTransformNat<VecType>::ForwardTransformToBitReverse(const Ve
     return;
 }
 
+
+template <typename VecType>
+void saveToBinary(const VecType& values, const std::string& path) {
+    // Open the file for binary output
+    std::ofstream outFile(path, std::ios::binary);
+    if (!outFile) {
+        throw std::runtime_error("Failed to open file: " + path);
+    }
+
+    auto modulus = values.GetModulus();
+    outFile.write(reinterpret_cast<const char*>(&modulus), sizeof(modulus));
+    // Write the size of the vector to the file
+    size_t size = values.GetLength();
+    outFile.write(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    // Write the contents of the vector to the file
+    outFile.write(reinterpret_cast<const char*>(&values[0]), size * sizeof(modulus));
+
+    // Check for write errors
+    if (!outFile) {
+        throw std::runtime_error("Failed to write to file: " + path);
+    }
+}
+
 template <typename VecType>
 void NumberTheoreticTransformNat<VecType>::ForwardTransformToBitReverseInPlace(const VecType& rootOfUnityTable,
                                                                                const VecType& preconRootOfUnityTable,
@@ -317,7 +348,8 @@ void NumberTheoreticTransformNat<VecType>::ForwardTransformToBitReverseInPlace(c
     //             element[j1 + 0] = (loVal + hiVal) mod modulus
     //             element[j1 + t] = (loVal - hiVal) mod modulus
     //
-
+    std::cout << "transformnat-impl.h:351 - ForwardTransformToBitReverseInPlace" << std::endl;
+    
     const auto modulus{element->GetModulus()};
     const uint32_t n(element->GetLength() >> 1);
     for (uint32_t m{1}, t{n}, logt{GetMSB(t)}; m < n; m <<= 1, t >>= 1, --logt) {
@@ -532,7 +564,7 @@ void NumberTheoreticTransformNat<VecType>::InverseTransformFromBitReverseInPlace
 
     auto modulus{element->GetModulus()};
     uint32_t n(element->GetLength());
-
+ 
     // precomputed omega[bitreversed(1)] * (n inverse). used in final stage of intt.
     auto omega1Inv{rootOfUnityInverseTable[1].ModMulFastConst(cycloOrderInv, modulus, preconCycloOrderInv)};
     auto preconOmega1Inv{omega1Inv.PrepModMulConst(modulus)};
@@ -665,8 +697,11 @@ void ChineseRemainderTransformFTTNat<VecType>::ForwardTransformToBitReverseInPla
         PreCompute(rootOfUnity, CycloOrder, modulus);
     }
 
-    NumberTheoreticTransformNat<VecType>().ForwardTransformToBitReverseInPlace(
-        m_rootOfUnityReverseTableByModulus[modulus], m_rootOfUnityPreconReverseTableByModulus[modulus], element);
+    const VecType& rootOfUnityVec = m_rootOfUnityReverseTableByModulus[modulus];
+    customNttWrapper(rootOfUnityVec, m_rootOfUnityPreconReverseTableByModulus[modulus], element);
+
+    //NumberTheoreticTransformNat<VecType>().ForwardTransformToBitReverseInPlace(
+    //    m_rootOfUnityReverseTableByModulus[modulus], m_rootOfUnityPreconReverseTableByModulus[modulus], element);
 }
 
 template <typename VecType>

@@ -297,6 +297,7 @@ template <typename VecType>
 void NumberTheoreticTransformDyn<VecType>::ForwardTransformToBitReverseInPlace(const VecType& rootOfUnityTable,
                                                                                const VecType& preconRootOfUnityTable,
                                                                                VecType* element) {
+    std::cout << "transformdyn-impl.h:300 NumberTheoreticTransformDyn<VecType>::ForwardTransformToBitReverseInPlace" << std::endl;
     usint n         = element->GetLength();
     IntType modulus = element->GetModulus();
 

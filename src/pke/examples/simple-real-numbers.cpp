@@ -97,7 +97,7 @@ int main() {
    * being used for these parameters. Give ring dimension N, the maximum batch
    * size is N/2, because of the way CKKS works.
    */
-    uint32_t batchSize = 8;
+    uint32_t batchSize = 1024;
 
     /* A4) Desired security level based on FHE standards.
    * This parameter can take four values. Three of the possible values
@@ -169,14 +169,16 @@ int main() {
     // Step 3: Encoding and encryption of inputs
 
     // Inputs
-    std::vector<double> x1 = {0.25, 0.5, 0.75, 1.0, 2.0, 3.0, 4.0, 5.0};
+    std::vector<double> x1;
+    for (int i = 0; i < 1000; ++i) {
+        x1.push_back((i % 10) / 5);
+    }
     std::vector<double> x2 = {5.0, 4.0, 3.0, 2.0, 1.0, 0.75, 0.5, 0.25};
 
     // Encoding as plaintexts
     Plaintext ptxt1 = cc->MakeCKKSPackedPlaintext(x1);
     Plaintext ptxt2 = cc->MakeCKKSPackedPlaintext(x2);
 
-    std::cout << "Input x1: " << ptxt1 << std::endl;
     std::cout << "Input x2: " << ptxt2 << std::endl;
 
     // Encrypt the encoded vectors
@@ -206,7 +208,7 @@ int main() {
     // We set the cout precision to 8 decimal digits for a nicer output.
     // If you want to see the error/noise introduced by CKKS, bump it up
     // to 15 and it should become visible.
-    std::cout.precision(8);
+    std::cout.precision(15);
 
     std::cout << std::endl << "Results of homomorphic computations: " << std::endl;
 
